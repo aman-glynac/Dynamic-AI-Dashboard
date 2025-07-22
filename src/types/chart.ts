@@ -23,6 +23,7 @@ export interface ChartConfig {
   customConfig?: Record<string, unknown>;
   dataSource?: DataSourceConfig;
   refreshInterval?: number;
+  containerId?: number;
 }
 
 export interface DataSourceConfig {
@@ -33,4 +34,12 @@ export interface DataSourceConfig {
   headers?: Record<string, string>;
   params?: Record<string, unknown>;
   refreshRate?: number;
+}
+
+// Props interface for chart components
+export interface ChartProps {
+  title?: string;
+  data: ChartData[];
+  config?: Partial<ChartConfig>;
+  isEditMode?: boolean;
 }

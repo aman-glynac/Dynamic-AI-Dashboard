@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useDashboardStore } from '@/store';
+import { useDashboardStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -16,54 +20,102 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   Save, 
   FolderOpen, 
-  FileText, 
+  Download, 
   Trash2, 
-  Download,
-  Upload,
-  MoreVertical 
+  MoreVertical,
+  FileText,
+  AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function SaveLoadControls() {
-  const {
-    currentDashboard,
-    dashboards,
-    hasUnsavedChanges,
-    saveDashboard,
-    createDashboard,
-    resetDashboard,
-    isLoading,
-  } = useDashboardStore();
-
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [dashboardTitle, setDashboardTitle] = useState('');
   const [dashboardDescription, setDashboardDescription] = useState('');
+  
+  const {
+    currentDashboard,
+    dashboards,
+    saveDashboard,
+    loadDashboard,
+    deleteDashboard,
+    isLoading,
+    error,
+    hasUnsavedChanges,
+  } = useDashboardStore();
+
+  const { addNotification } = useUIStore();
 
   const handleSave = async () => {
-    if (!currentDashboard) {
-      // Create new dashboard
-      createDashboard(dashboardTitle || 'Untitled Dashboard');
+    try {
+      const title = dashboardTitle || currentDashboard?.title || 'Untitled Dashboard';
+      const description = dashboardDescription || currentDashboard?.description || '';
+      
+      await saveDashboard(title, description);
+      
+      addNotification({
+        type: 'success',
+        title: 'Dashboard Saved',
+        message: `"${title}" has been saved successfully.`,
+      });
+      
+      setShowSaveDialog(false);
+      setDashboardTitle('');
+      setDashboardDescription('');
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Save Failed',
+        message: 'Failed to save dashboard. Please try again.',
+      });
     }
-    
-    await saveDashboard();
-    setShowSaveDialog(false);
-    setDashboardTitle('');
-    setDashboardDescription('');
   };
 
-  const handleNew = () => {
-    resetDashboard();
-    createDashboard('New Dashboard');
+  const handleLoad = async (dashboardId: string) => {
+    try {
+      await loadDashboard(dashboardId);
+      setShowLoadDialog(false);
+      
+      addNotification({
+        type: 'success',
+        title: 'Dashboard Loaded',
+        message: 'Dashboard loaded successfully.',
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Load Failed',
+        message: 'Failed to load dashboard. Please try again.',
+      });
+    }
+  };
+
+  const handleDelete = async (dashboardId: string) => {
+    if (confirm('Are you sure you want to delete this dashboard?')) {
+      try {
+        await deleteDashboard(dashboardId);
+        
+        addNotification({
+          type: 'success',
+          title: 'Dashboard Deleted',
+          message: 'Dashboard deleted successfully.',
+        });
+      } catch (error) {
+        addNotification({
+          type: 'error',
+          title: 'Delete Failed',
+          message: 'Failed to delete dashboard. Please try again.',
+        });
+      }
+    }
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <>
       {/* Save Controls */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogTrigger asChild>
@@ -154,17 +206,14 @@ export function SaveLoadControls() {
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                         <span>{dashboard.containerCount} containers</span>
                         <span>{dashboard.chartCount} charts</span>
-                        <span>Modified {dashboard.updatedAt.toLocaleDateString()}</span>
+                        <span>Modified {new Date(dashboard.updatedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          // Load dashboard logic here
-                          setShowLoadDialog(false);
-                        }}
+                        onClick={() => handleLoad(dashboard.id)}
                       >
                         Load
                       </Button>
@@ -179,7 +228,10 @@ export function SaveLoadControls() {
                             <Download className="w-4 h-4 mr-2" />
                             Export
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDelete(dashboard.id)}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -190,34 +242,15 @@ export function SaveLoadControls() {
                 ))}
               </div>
             )}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* New Dashboard */}
-      <Button variant="outline" size="sm" onClick={handleNew}>
-        <FileText className="w-4 h-4 mr-1" />
-        New
-      </Button>
-
-      {/* Import/Export Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <Upload className="w-4 h-4 mr-2" />
-            Import Dashboard
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled={!currentDashboard}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Dashboard
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    </>
   );
 }

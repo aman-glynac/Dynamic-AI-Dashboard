@@ -1,6 +1,5 @@
 import { DataSourceConfig, ChartData } from '@/types';
 import { APP_CONFIG } from '@/lib/constants';
-import { sleep } from '@/lib/utils';
 
 class DataService {
   private baseUrl = `${APP_CONFIG.API_BASE_URL}/api/data`;
@@ -67,13 +66,13 @@ class DataService {
   private async fetchFromFile(dataSource: DataSourceConfig): Promise<ChartData[]> {
     // This would handle CSV/Excel file parsing
     // For now, return mock data
-    await sleep(1000); // Simulate loading time
+    await this.sleep(1000); // Simulate loading time
     return this.generateMockData();
   }
 
   private async fetchMockData(dataSource: DataSourceConfig): Promise<ChartData[]> {
     // Simulate network delay
-    await sleep(Math.random() * 1000 + 500);
+    await this.sleep(Math.random() * 1000 + 500);
     
     return this.generateMockData();
   }
@@ -88,6 +87,10 @@ class DataService {
       { month: 'May', sales: Math.floor(Math.random() * 5000) + 3000 },
       { month: 'Jun', sales: Math.floor(Math.random() * 5000) + 3000 },
     ];
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

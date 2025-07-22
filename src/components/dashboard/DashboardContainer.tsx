@@ -51,12 +51,12 @@ export function DashboardContainer({
             containerId={container.id}
             isEditMode={isEditMode}
           />
-        ) : (
+        ) : chart ? (
           <ChartRenderer
             chart={chart}
             isEditMode={isEditMode}
           />
-        )}
+        ) : null}
       </div>
 
       {/* Resize Handle (Edit Mode Only) */}

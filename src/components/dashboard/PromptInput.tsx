@@ -77,16 +77,13 @@ export function PromptInput() {
           </div>
           <div className="flex flex-wrap gap-2">
             {examplePrompts.slice(0, 3).map((example, index) => (
-              <Button
+              <button
                 key={index}
-                variant="ghost"
-                size="sm"
-                className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
                 onClick={() => insertExamplePrompt(example)}
+                className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
               >
-                <Zap className="w-3 h-3 mr-1" />
                 {example}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
@@ -94,50 +91,54 @@ export function PromptInput() {
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex items-end gap-3 p-4 bg-card rounded-lg border border-border shadow-sm">
-          <div className="flex-1">
-            <Textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                selectedContainerId
-                  ? `Describe the chart you want to create in container ${selectedContainerId}...`
-                  : "Describe the chart you want to create (e.g., 'Create a bar chart showing monthly sales')"
-              }
-              className="min-h-[60px] max-h-[120px] resize-none border-0 shadow-none focus-visible:ring-0 bg-transparent"
-              disabled={isGenerating}
-            />
-          </div>
-          
+        <Textarea
+          ref={textareaRef}
+          value={prompt}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            selectedContainerId
+              ? `Describe the chart for container ${selectedContainerId}...`
+              : "Describe the chart you want to create..."
+          }
+          className="min-h-[60px] max-h-[120px] pr-16 resize-none"
+          disabled={isGenerating}
+        />
+        
+        <div className="absolute right-2 bottom-2">
           <Button
             type="submit"
+            size="sm"
             disabled={!prompt.trim() || isGenerating}
-            className="shrink-0"
+            className="h-8"
           >
             {isGenerating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                <span className="sr-only">Generating...</span>
+              </>
             ) : (
-              <Send className="w-4 h-4" />
+              <>
+                <Send className="w-4 h-4 mr-1" />
+                <span className="sr-only">Send</span>
+              </>
             )}
           </Button>
         </div>
-
-        {/* Status Indicators */}
-        {selectedContainerId && (
-          <div className="absolute -top-8 left-0">
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground text-xs rounded-full">
-              Target: Container {selectedContainerId}
-            </div>
-          </div>
-        )}
       </form>
 
-      {/* Help Text */}
-      <div className="mt-2 text-xs text-muted-foreground text-center">
-        Press Enter to generate • Shift+Enter for new line
-        {!selectedContainerId && " • Click a container to target it specifically"}
+      {/* Helper Text */}
+      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <span>Press Enter to send, Shift+Enter for new line</span>
+          {selectedContainerId && (
+            <span className="flex items-center gap-1">
+              <Zap className="w-3 h-3" />
+              Target: Container {selectedContainerId}
+            </span>
+          )}
+        </div>
+        <span>{prompt.length}/500</span>
       </div>
     </div>
   );

@@ -2,11 +2,11 @@
 
 import React, { useMemo } from 'react';
 import { ChartConfig } from '@/types';
-import { BarChartComponent } from './BarChart';
-import { LineChartComponent } from './LineChart';
-import { PieChartComponent } from './PieChart';
-import { ScatterChartComponent } from './ScatterChart';
-import { DataTableComponent } from './DataTable';
+import { BarChart } from './BarChart';
+import { LineChart } from './LineChart';
+import { PieChart } from './PieChart';
+import { ScatterChart } from './ScatterChart';
+import { DataTable } from './DataTable';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,16 +23,16 @@ export function ChartRenderer({ chart, isEditMode }: ChartRendererProps) {
   const ChartComponent = useMemo(() => {
     switch (chart.type) {
       case 'bar':
-        return BarChartComponent;
+        return BarChart;
       case 'line':
-        return LineChartComponent;
+        return LineChart;
       case 'pie':
       case 'donut':
-        return PieChartComponent;
+        return PieChart;
       case 'scatter':
-        return ScatterChartComponent;
+        return ScatterChart;
       case 'table':
-        return DataTableComponent;
+        return DataTable;
       default:
         return null;
     }
@@ -56,7 +56,7 @@ export function ChartRenderer({ chart, isEditMode }: ChartRendererProps) {
           <p className="text-sm text-muted-foreground mt-1">{error}</p>
         </div>
         <Button
-          variant="outline"
+          variant={"outline" as const}
           size="sm"
           onClick={() => refetch()}
           className="mx-auto"
@@ -81,19 +81,12 @@ export function ChartRenderer({ chart, isEditMode }: ChartRendererProps) {
 
   return (
     <div className="w-full h-full">
-      {chart.title && (
-        <div className="chart-title">
-          {chart.title}
-        </div>
-      )}
-      
-      <div className="flex-1">
-        <ChartComponent
-          data={data || chart.data}
-          config={chart}
-          isEditMode={isEditMode}
-        />
-      </div>
+      <ChartComponent
+        title={chart.title}
+        data={data || chart.data}
+        config={chart}
+        isEditMode={isEditMode}
+      />
     </div>
   );
 }

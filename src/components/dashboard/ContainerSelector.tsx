@@ -5,7 +5,7 @@ import { useDashboardStore } from '@/store';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Grid3X3, Minus, Plus } from 'lucide-react';
+import { Grid, Minus, Plus } from 'lucide-react';
 
 export function ContainerSelector() {
   const { gridConfig, setContainerCount } = useDashboardStore();
@@ -29,7 +29,7 @@ export function ContainerSelector() {
 
   return (
     <div className="flex items-center gap-3 p-2 bg-muted rounded-lg">
-      <Grid3X3 className="w-4 h-4 text-muted-foreground" />
+      <Grid className="w-4 h-4 text-muted-foreground" />
       <Label className="text-sm font-medium whitespace-nowrap">
         Containers: {currentCount}
       </Label>

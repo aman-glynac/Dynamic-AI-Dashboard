@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { Mode, Notification } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '@/lib/utils';
 
 interface UIStore {
   // State
@@ -46,7 +46,7 @@ export const useUIStore = create<UIStore>()(
       addNotification: (notification) => {
         const newNotification: Notification = {
           ...notification,
-          id: uuidv4(),
+          id: generateId(),
           createdAt: new Date(),
         };
 

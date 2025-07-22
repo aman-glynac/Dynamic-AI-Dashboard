@@ -6,56 +6,73 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
+
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
+
     --radius: 0.5rem;
 
-    /* Dashboard-specific variables */
-    --dashboard-canvas: 0 0% 98%;
-    --dashboard-container: 0 0% 100%;
-    --dashboard-container-active: 221.2 83.2% 53.3%;
-    --dashboard-grid: 214.3 31.8% 91.4%;
-
-    /* Chart color scheme */
+    /* Chart colors */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Dashboard specific variables */
+    --dashboard-canvas: 210 40% 98%;
+    --dashboard-container: 0 0% 100%;
+    --dashboard-container-active: 221.2 83.2% 53.3%;
+    --dashboard-grid: 214.3 31.8% 91.4%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
+
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
+
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 94.1%;
@@ -134,90 +151,89 @@
 
   /* Grid layout utilities */
   .grid-layout {
-    @apply w-full h-full;
+    @apply grid gap-4;
   }
 
-  .grid-item {
-    @apply relative;
+  /* React Grid Layout overrides */
+  .react-grid-item {
+    @apply transition-all;
   }
 
-  /* Resize handle styles */
-  .react-resizable-handle {
-    @apply absolute z-10;
+  .react-grid-item.resizing {
+    @apply z-10;
+  }
+
+  .react-grid-item.react-draggable-dragging {
+    @apply z-20 cursor-move;
+  }
+
+  .react-grid-item > .react-resizable-handle {
+    @apply absolute;
+  }
+
+  .react-resizable-handle-sw {
+    @apply bottom-0 left-0 cursor-sw-resize;
   }
 
   .react-resizable-handle-se {
-    @apply bottom-0 right-0 w-4 h-4 cursor-se-resize;
-    background: linear-gradient(
-      -45deg,
-      transparent 40%,
-      hsl(var(--border)) 40%,
-      hsl(var(--border)) 60%,
-      transparent 60%
-    );
+    @apply bottom-0 right-0 cursor-se-resize;
   }
 
-  .react-resizable-handle-s {
-    @apply bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-2 cursor-s-resize;
-    background: linear-gradient(
-      to bottom,
-      transparent 40%,
-      hsl(var(--border)) 40%,
-      hsl(var(--border)) 60%,
-      transparent 60%
-    );
+  .react-resizable-handle-nw {
+    @apply top-0 left-0 cursor-nw-resize;
+  }
+
+  .react-resizable-handle-ne {
+    @apply top-0 right-0 cursor-ne-resize;
+  }
+
+  .react-resizable-handle-w,
+  .react-resizable-handle-e {
+    @apply top-1/2 -translate-y-1/2;
+  }
+
+  .react-resizable-handle-w {
+    @apply left-0 cursor-ew-resize;
   }
 
   .react-resizable-handle-e {
-    @apply right-0 top-1/2 transform -translate-y-1/2 w-2 h-8 cursor-e-resize;
-    background: linear-gradient(
-      to right,
-      transparent 40%,
-      hsl(var(--border)) 40%,
-      hsl(var(--border)) 60%,
-      transparent 60%
-    );
+    @apply right-0 cursor-ew-resize;
   }
 
-  /* Animation classes */
-  .fade-in {
-    @apply animate-fade-in;
+  .react-resizable-handle-n,
+  .react-resizable-handle-s {
+    @apply left-1/2 -translate-x-1/2;
   }
 
-  .scale-in {
-    @apply animate-scale-in;
+  .react-resizable-handle-n {
+    @apply top-0 cursor-ns-resize;
   }
 
-  .container-pulse {
-    @apply animate-container-pulse;
-  }
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .react-resizable-handle-s {
+    @apply bottom-0 cursor-ns-resize;
   }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Utility classes */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
   }
 
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
 
-  /* Dashboard layout utilities */
-  .dashboard-grid {
-    display: grid;
-    gap: 1rem;
-    width: 100%;
-    height: 100%;
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  /* Responsive text sizes for charts */
-  .chart-text-xs { font-size: 0.75rem; }
-  .chart-text-sm { font-size: 0.875rem; }
-  .chart-text-base { font-size: 1rem; }
-  .chart-text-lg { font-size: 1.125rem; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground));
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground));
+  }
 }
