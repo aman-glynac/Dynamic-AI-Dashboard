@@ -114,15 +114,8 @@ REQUIREMENTS:
 8. Add meaningful tooltips, labels, and formatting
 9. Generate an appropriate PascalCase component name
 10. Include proper axis labels, legends, and titles
-11. IMPORTANT: Use React.createElement() calls instead of JSX syntax
-12. IMPORTANT: Do not use JSX tags like <div> or <BarChart>, use React.createElement instead
-
-EXAMPLE FORMAT:
-Instead of: <div className="container">Hello</div>
-Use: React.createElement('div', {className: 'container'}, 'Hello')
-
-Instead of: <BarChart data={data}><Bar dataKey="value" /></BarChart>
-Use: React.createElement(BarChart, {data: data}, React.createElement(Bar, {dataKey: 'value'}))
+11. Use standard JSX syntax - <div>, <BarChart>, etc. are perfectly fine
+12. Make sure the component is properly exported as default
 
 GENERATE THE COMPLETE COMPONENT CODE - NO PLACEHOLDERS, NO TEMPLATES!
 
