@@ -31,6 +31,9 @@ export default function ComponentRenderer({ componentCode, componentName }: Comp
             .replace(/import\s+\{[^}]+\}\s+from\s+['"]recharts['"];?\s*/g, '')
             .replace(/import\s+[^;]+;?\s*/g, '') // Remove any other imports
           
+          // Transform JSX to React.createElement calls
+          processedCode = transformJSX(processedCode)
+          
           // Create a module-like environment
           const module = { exports: {} }
           const exports = module.exports
@@ -53,6 +56,73 @@ export default function ComponentRenderer({ componentCode, componentName }: Comp
           
           // Execute with proper context
           return componentFactory(React, module, exports, recharts)
+        }
+
+        // Simple JSX to React.createElement transformer
+        const transformJSX = (code: string): string => {
+          // This is a basic transformer - handles simple JSX cases
+          let transformed = code
+
+          // Transform self-closing tags: <Tag prop="value" />
+          transformed = transformed.replace(
+            /<(\w+)([^>]*?)\s*\/>/g,
+            (match, tagName, props) => {
+              const propsObj = parseProps(props)
+              return `React.createElement(${tagName}, ${propsObj})`
+            }
+          )
+
+          // Transform opening/closing tags: <Tag prop="value">children</Tag>
+          // This is a simplified approach - for complex nested JSX, we'd need a proper parser
+          transformed = transformed.replace(
+            /<(\w+)([^>]*?)>([\s\S]*?)<\/\1>/g,
+            (match, tagName, props, children) => {
+              const propsObj = parseProps(props)
+              const processedChildren = children.trim() ? `, ${transformJSX(children)}` : ''
+              return `React.createElement(${tagName}, ${propsObj}${processedChildren})`
+            }
+          )
+
+          // Handle string literals that look like HTML tags (simple text content)
+          transformed = transformed.replace(
+            /React\.createElement\((\w+), ([^,]+), ([^)]+)\)/g,
+            (match, tag, props, children) => {
+              // If children is just a string, wrap it in quotes
+              if (children && !children.includes('React.createElement') && !children.startsWith('"') && !children.startsWith("'")) {
+                children = `"${children.replace(/"/g, '\\"')}"`
+              }
+              return `React.createElement(${tag}, ${props}, ${children})`
+            }
+          )
+
+          return transformed
+        }
+
+        // Parse JSX props into an object string
+        const parseProps = (propsString: string): string => {
+          if (!propsString.trim()) return 'null'
+          
+          const props: string[] = []
+          const propRegex = /(\w+)=\{([^}]+)\}|(\w+)="([^"]+)"|(\w+)='([^']+)'|(\w+)/g
+          let match
+          
+          while ((match = propRegex.exec(propsString)) !== null) {
+            if (match[1] && match[2]) {
+              // {value} props
+              props.push(`${match[1]}: ${match[2]}`)
+            } else if (match[3] && match[4]) {
+              // "string" props
+              props.push(`${match[3]}: "${match[4]}"`)
+            } else if (match[5] && match[6]) {
+              // 'string' props
+              props.push(`${match[5]}: "${match[6]}"`)
+            } else if (match[7]) {
+              // boolean props
+              props.push(`${match[7]}: true`)
+            }
+          }
+          
+          return props.length > 0 ? `{${props.join(', ')}}` : 'null'
         }
 
         // Execute the component code safely
