@@ -2,6 +2,7 @@ import pandas as pd
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 import json
+import numpy as np
 
 from .query_executor import QueryExecutionResult
 from .sql_generator import SQLGenerationResult
@@ -174,15 +175,32 @@ class DataProcessor:
         # Basic transformations
         df_transformed = df.copy()
         
-        # Convert string numbers to actual numbers
+        # IMPORTANT: Only convert columns that are clearly numeric
+        # Do NOT convert string columns that might be categories/labels
         for col in df_transformed.columns:
             if df_transformed[col].dtype == 'object':
+                # Check if this column contains numeric-looking values
+                sample_values = df_transformed[col].dropna().head(10)
+                
+                # Only convert if ALL non-null values look like numbers
                 try:
-                    numeric_series = pd.to_numeric(df_transformed[col], errors='coerce')
-                    if not numeric_series.isna().all():
-                        df_transformed[col] = numeric_series
-                        self.processing_log.append(f"Converted {col} to numeric")
+                    # Try to convert a sample
+                    test_values = pd.to_numeric(sample_values, errors='coerce')
+                    
+                    # Only proceed if:
+                    # 1. No NaN values were created (all were valid numbers)
+                    # 2. The column name suggests it's numeric (contains words like 'sales', 'amount', 'count', etc.)
+                    numeric_keywords = ['sales', 'amount', 'count', 'price', 'quantity', 'total', 'sum', 'avg', 'mean']
+                    is_numeric_column = any(keyword in col.lower() for keyword in numeric_keywords)
+                    
+                    if not test_values.isna().any() and is_numeric_column:
+                        df_transformed[col] = pd.to_numeric(df_transformed[col], errors='coerce')
+                        self.processing_log.append(f"Converted {col} to numeric (detected numeric values)")
+                    else:
+                        self.processing_log.append(f"Kept {col} as string (categorical data)")
                 except:
+                    # If conversion fails, keep as string
+                    self.processing_log.append(f"Kept {col} as string (conversion failed)")
                     continue
         
         return df_transformed
@@ -224,19 +242,57 @@ class DataProcessor:
             # Return data with explicit x/y naming for charts
             chart_data = []
             for _, row in df.iterrows():
-                chart_data.append({
+                # Create the data point
+                data_point = {
                     'x': row[x_axis],
                     'y': row[y_axis],
                     x_axis: row[x_axis],  # Keep original column names too
                     y_axis: row[y_axis],
-                    **{col: row[col] for col in df.columns if col not in [x_axis, y_axis]}
-                })
+                }
+                
+                # Add all other columns
+                for col in df.columns:
+                    if col not in [x_axis, y_axis]:
+                        data_point[col] = row[col]
+                
+                # Convert any NaN values to None for JSON serialization
+                for key, value in data_point.items():
+                    if pd.isna(value):
+                        data_point[key] = None
+                    # Convert numpy types to Python types
+                    elif isinstance(value, np.integer):
+                        data_point[key] = int(value)
+                    elif isinstance(value, np.floating):
+                        data_point[key] = float(value)
+                    elif isinstance(value, np.ndarray):
+                        data_point[key] = value.tolist()
+                
+                chart_data.append(data_point)
             
             self.processing_log.append(f"Formatted data for {chart_type} chart with x={x_axis}, y={y_axis}")
             return chart_data
         
-        # Fallback to raw data
-        return df.to_dict('records')
+        # Fallback to raw data with type conversion
+        chart_data = []
+        for _, row in df.iterrows():
+            data_point = {}
+            for col in df.columns:
+                value = row[col]
+                # Convert any NaN values to None for JSON serialization
+                if pd.isna(value):
+                    data_point[col] = None
+                # Convert numpy types to Python types
+                elif isinstance(value, np.integer):
+                    data_point[col] = int(value)
+                elif isinstance(value, np.floating):
+                    data_point[col] = float(value)
+                elif isinstance(value, np.ndarray):
+                    data_point[col] = value.tolist()
+                else:
+                    data_point[col] = value
+            chart_data.append(data_point)
+        
+        return chart_data
     
     def _generate_data_summary(self, df: pd.DataFrame, query_result: QueryExecutionResult) -> Dict[str, Any]:
         """Generate summary statistics about the processed data"""

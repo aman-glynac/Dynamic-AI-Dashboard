@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import ComponentRenderer from './ComponentRenderer'
 import { apiService } from '@/services/api'
 import toast from 'react-hot-toast'
@@ -26,6 +26,9 @@ export default function Canvas() {
     totalTables: number
     hasData: boolean
   }>({ totalTables: 0, hasData: false })
+
+  // Use ref to store the function instead of window global
+  const chartGenerationRef = useRef<((prompt: string) => Promise<void>) | null>(null)
 
   // Check database status on mount
   useEffect(() => {
@@ -86,16 +89,94 @@ export default function Canvas() {
         }
       )
 
-      // Get final job status to extract component name
+      // Get final job status to extract component name and additional info
       const finalStatus = await apiService.getJobStatus(jobResponse.job_id)
+      
+      // Extract component name from the code using regex
+      const extractComponentName = (code: string): string => {
+        // Match pattern: const ComponentName = () => {
+        const componentNameMatch = code.match(/const\s+(\w+)\s*=\s*\(\s*\)\s*=>\s*{/)
+        if (componentNameMatch && componentNameMatch[1]) {
+          return componentNameMatch[1]
+        }
+        
+        // Fallback: try to match function ComponentName() {
+        const functionMatch = code.match(/function\s+(\w+)\s*\(\s*\)/)
+        if (functionMatch && functionMatch[1]) {
+          return functionMatch[1]
+        }
+        
+        // Last resort: find any PascalCase word that might be a component
+        const pascalCaseMatch = code.match(/\b([A-Z][a-zA-Z]+(?:Chart|Component|View|Widget))\b/)
+        if (pascalCaseMatch && pascalCaseMatch[1]) {
+          return pascalCaseMatch[1]
+        }
+        
+        return 'GeneratedChart'
+      }
+      
+      // Extract chart type from component name or code
+      const extractChartType = (componentName: string, code: string): string => {
+        // Try to get from component name first
+        const namePatterns = {
+          'Bar': 'bar',
+          'Line': 'line',
+          'Pie': 'pie',
+          'Scatter': 'scatter',
+          'Area': 'area',
+          'Radar': 'radar',
+          'Table': 'table'
+        }
+        
+        for (const [pattern, type] of Object.entries(namePatterns)) {
+          if (componentName.includes(pattern)) {
+            return type
+          }
+        }
+        
+        // Try to detect from code
+        const codePatterns = {
+          'BarChart': 'bar',
+          'LineChart': 'line',
+          'PieChart': 'pie',
+          'ScatterChart': 'scatter',
+          'AreaChart': 'area',
+          'RadarChart': 'radar',
+          '<table': 'table'
+        }
+        
+        for (const [pattern, type] of Object.entries(codePatterns)) {
+          if (code.includes(pattern)) {
+            return type
+          }
+        }
+        
+        return 'chart'
+      }
+      
+      const componentName = extractComponentName(result)
+      const chartType = extractChartType(componentName, result)
+      
+      console.log('Full finalStatus:', finalStatus)
+      console.log('Component code length:', result?.length)
+      console.log('Extracted component name:', componentName)
+      console.log('Detected chart type:', chartType)
 
       setChartState(prev => ({
         ...prev,
         componentCode: result,
-        componentName: (finalStatus as any).component_name || 'GeneratedChart',
+        componentName: componentName,
         isLoading: false,
         progress: 100
       }))
+
+      // Log the component for debugging
+      console.log('Setting component:', {
+        code: result?.substring(0, 500),
+        name: componentName,
+        type: chartType,
+        fullResult: result
+      })
 
       toast.dismiss('progress')
       toast.success('Chart generated successfully!')
@@ -116,6 +197,23 @@ export default function Canvas() {
     }
   }
 
+  // Store the function in ref and expose it globally
+  useEffect(() => {
+    chartGenerationRef.current = handleChartGeneration
+    
+    // Expose to window for PromptInput
+    if (typeof window !== 'undefined') {
+      (window as any).generateChart = handleChartGeneration
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).generateChart
+      }
+    }
+  }, [])
+
   return (
     <div className="w-full h-full bg-gray-50 p-4 relative">
       {/* Database Status Banner */}
@@ -130,6 +228,7 @@ export default function Canvas() {
         className={`w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center relative ${
           !databaseStatus.hasData ? 'mt-16' : ''
         }`}
+        style={{ minHeight: '400px' }} 
       >
         {/* Loading State */}
         {chartState.isLoading && (
@@ -175,17 +274,6 @@ export default function Canvas() {
             Container 1
           </div>
         )}
-      </div>
-
-      {/* Expose chart generation function to parent */}
-      <div style={{ display: 'none' }}>
-        {React.createElement(() => {
-          // Make handleChartGeneration available globally for PromptInput
-          if (typeof window !== 'undefined') {
-            (window as any).generateChart = handleChartGeneration
-          }
-          return null
-        })}
       </div>
     </div>
   )

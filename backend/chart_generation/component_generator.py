@@ -51,6 +51,7 @@ class ComponentGenerator:
             component_result = self._generate_complete_component(processed_data, user_prompt)
             
             if not component_result:
+                print("❌ LLM failed to generate component code")
                 return ComponentGenerationResult(
                     component_code="",
                     component_name="",
@@ -58,6 +59,11 @@ class ComponentGenerator:
                     success=False,
                     error_message="LLM failed to generate component code"
                 )
+            
+            # Add validation logging
+            print(f"✅ Generated component: {component_result['component_name']}")
+            print(f"   Chart type: {component_result['chart_type']}")
+            print(f"   Code length: {len(component_result['component_code'])} chars")
             
             return ComponentGenerationResult(
                 component_code=component_result['component_code'],
@@ -67,6 +73,9 @@ class ComponentGenerator:
             )
             
         except Exception as e:
+            print(f"❌ Component generation error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return ComponentGenerationResult(
                 component_code="",
                 component_name="",
@@ -108,7 +117,7 @@ STRICT REQUIREMENTS:
 2. DO NOT include any import statements - they will be provided automatically
 3. Use only React hooks (useState, useEffect, etc.) and Recharts components
 4. Embed the complete data array directly in the component
-5. Use Tailwind CSS classes for styling
+5. Use ONLY inline styles with style={{}} - DO NOT use className or Tailwind
 6. Choose the BEST chart type for this data and user request
 7. Include error handling and loading states
 8. Make it responsive with proper sizing
@@ -119,13 +128,11 @@ STRICT REQUIREMENTS:
 13. Handle empty or invalid data gracefully
 14. Use proper TypeScript syntax if needed
 
-IMPORTANT FORMATTING:
-- Start the component with: const ComponentName = () => {{
-- End with: }}; (no export statement needed)
-- Ensure all JSX is properly formatted
-- Use double quotes for string literals
-- Properly close all JSX tags
-- Include proper spacing and indentation
+CRITICAL STYLING RULES:
+- Use inline styles (style={{...}}) instead of className
+- DO NOT use Tailwind classes as they won't work in dynamic components
+- Example: style={{width: '100%', height: '400px'}} instead of className="w-full h-96"
+- Ensure the root div has explicit height (e.g., style={{width: '100%', height: '400px'}})
 
 EXAMPLE STRUCTURE:
 ```javascript
@@ -133,8 +140,10 @@ const SalesChart = () => {{
   const data = [...your data here...];
   
   return (
-    <div className="w-full h-full p-4">
-      <h2 className="text-xl font-bold mb-4">Your Chart Title</h2>
+    <div style={{{{width: '100%', height: '400px', padding: '16px'}}}}>
+      <h2 style={{{{fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center'}}}}>
+        Your Chart Title
+      </h2>
       <ResponsiveContainer width="100%" height="90%">
         <BarChart data={{data}}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -149,7 +158,7 @@ const SalesChart = () => {{
   );
 }};
 ```
-
+Very IMPORTANT: Use only double quotes " for strings in JSON. Do NOT use backticks ` or single quotes '."
 Return your response as a JSON object:
 {{
   "component_code": "/* Complete React component code here - NO IMPORTS */",
@@ -157,12 +166,16 @@ Return your response as a JSON object:
   "chart_type": "bar|line|pie|scatter|table|area|etc"
 }}
 
-CRITICAL: The component_code should be the ENTIRE React component as a string, ready to execute, with NO import statements.
+CRITICAL: 
+- The component_code should be the ENTIRE React component as a string, ready to execute
+- NO import statements
+- Use INLINE STYLES only (no className)
+- Ensure root element has explicit height
 """
         
         try:
             response = self.client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": generation_prompt}],
                 temperature=0.1,  # Lower temperature for more consistent code generation
                 max_tokens=4000
@@ -172,6 +185,8 @@ CRITICAL: The component_code should be the ENTIRE React component as a string, r
             
             # Extract JSON from response
             result = self._extract_json_from_response(response_text)
+
+            # print("=====================================================================","\n", (result))
             
             if result and 'component_code' in result:
                 # Clean and validate the generated code
@@ -268,7 +283,7 @@ CRITICAL: The component_code should be the ENTIRE React component as a string, r
         try:
             # Remove code block formatting if present
             cleaned_text = response_text
-            
+            # print("===============================\n", cleaned_text)
             # Handle various markdown code block formats
             if '```json' in cleaned_text:
                 start_marker = '```json'
@@ -348,30 +363,65 @@ CRITICAL: The component_code should be the ENTIRE React component as a string, r
         
         chart_data = processed_data.chart_data if processed_data.success else []
         
-        # Create a much simpler fallback that's guaranteed to work
+        # Use inline styles instead of Tailwind classes
         fallback_code = f'''const ErrorChart = () => {{
   const data = {json.dumps(chart_data[:10], default=str)};
   
   return (
-    <div className="w-full h-full flex items-center justify-center p-4">
-      <div className="text-center max-w-2xl">
-        <div className="text-red-500 text-2xl mb-4">⚠️</div>
-        <div className="text-lg font-semibold text-red-700 mb-2">Chart Generation Error</div>
-        <div className="text-sm text-gray-600 mb-4 bg-gray-100 p-3 rounded">{error_message}</div>
+    <div style={{{{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    }}}}>
+      <div style={{{{
+        textAlign: 'center',
+        maxWidth: '32rem',
+        backgroundColor: '#fee2e2',
+        border: '1px solid #fecaca',
+        borderRadius: '0.5rem',
+        padding: '2rem'
+      }}}}>
+        <div style={{{{fontSize: '2rem', marginBottom: '1rem'}}}}>⚠️</div>
+        <div style={{{{fontSize: '1.125rem', fontWeight: '600', color: '#b91c1c', marginBottom: '0.5rem'}}}}>
+          Chart Generation Error
+        </div>
+        <div style={{{{fontSize: '0.875rem', color: '#7f1d1d', marginBottom: '1rem', backgroundColor: '#fef2f2', padding: '0.75rem', borderRadius: '0.25rem'}}}}>
+          {error_message}
+        </div>
         {{data && data.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-800 mb-2">Available Data Preview:</h4>
-            <div className="text-xs font-mono text-left bg-white p-2 rounded overflow-auto max-h-32">
+          <div style={{{{
+            backgroundColor: '#dbeafe',
+            border: '1px solid #93c5fd',
+            borderRadius: '0.5rem',
+            padding: '1rem',
+            marginTop: '1rem',
+            textAlign: 'left'
+          }}}}>
+            <h4 style={{{{fontWeight: '500', color: '#1e40af', marginBottom: '0.5rem'}}}}>
+              Available Data Preview:
+            </h4>
+            <div style={{{{
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+              backgroundColor: 'white',
+              padding: '0.5rem',
+              borderRadius: '0.25rem',
+              overflow: 'auto',
+              maxHeight: '8rem'
+            }}}}>
               <pre>{{JSON.stringify(data.slice(0, 3), null, 2)}}</pre>
             </div>
             {{data.length > 3 && (
-              <div className="text-xs text-blue-600 mt-2">
+              <div style={{{{fontSize: '0.75rem', color: '#2563eb', marginTop: '0.5rem'}}}}>
                 ... and {{data.length - 3}} more rows
               </div>
             )}}
           </div>
         )}}
-        <div className="mt-4 text-xs text-gray-500">
+        <div style={{{{marginTop: '1rem', fontSize: '0.75rem', color: '#6b7280'}}}}>
           Try rephrasing your prompt or check the data source
         </div>
       </div>
