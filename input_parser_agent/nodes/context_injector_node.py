@@ -4,14 +4,9 @@ Context Injector Node for LangGraph workflow
 
 from typing import Dict
 from datetime import datetime
-import sys
-import os
 
-# Add tools to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from tools.context_injector import ContextInjector
-from state import InputParserState
+from ..tools.context_injector import ContextInjector
+from ..state import InputParserState
 
 
 class ContextInjectorNode:

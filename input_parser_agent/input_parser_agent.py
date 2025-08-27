@@ -6,7 +6,7 @@ Orchestrates the complete input parsing pipeline using LangGraph nodes
 from typing import Dict, Any, Literal
 from langgraph.graph import StateGraph, END
 
-from state import InputParserState
+from .state import InputParserState
 
 # Try to import checkpoint functionality
 try:
@@ -15,7 +15,8 @@ try:
 except ImportError:
     HAS_CHECKPOINT = False
     print("⚠️  Checkpoint functionality not available")
-from nodes import (
+    
+from .nodes import (
     text_cleaner_node,
     input_validator_node,
     schema_retriever_node,
@@ -205,107 +206,3 @@ class InputParserAgent:
         config = {"configurable": {"thread_id": thread_id}}
         return list(self.app.get_state_history(config))
 
-
-# Convenience function for quick usage
-def parse_input(user_input: str) -> InputParserState:
-    """
-    Quick function to parse user input through the complete pipeline
-    
-    Args:
-        user_input: Raw user input to process
-        
-    Returns:
-        InputParserState: Final processed state
-    """
-    agent = InputParserAgent()
-    return agent.process_sync(user_input)
-
-
-def parse_input_to_dict(user_input: str, session_id: str = None, user_id: str = None, context: Dict = None) -> dict:
-    """
-    Parse user input and return structured result dictionary following specification
-    
-    Args:
-        user_input: Raw user input to process
-        session_id: User session identifier
-        user_id: User identifier  
-        context: Previous queries and preferences
-        
-    Returns:
-        dict: Structured result matching specification output schema
-    """
-    result = parse_input(user_input)
-    
-    # Use LLM confidence if available, otherwise validation score
-    confidence_score = result.confidence_score if hasattr(result, 'confidence_score') and result.confidence_score > 0 else result.validation_score
-    
-    return {
-        "cleaned_input": result.cleaned_input or "",
-        "is_valid": result.is_valid,
-        "confidence_score": confidence_score,
-        "detected_intent": result.detected_intent or "unknown",
-        "primary_table": result.primary_table or "",
-        "columns": result.columns or [],
-        "mapped_fields": result.mapped_fields or {},
-        "schema_context": result.schema_context or {},
-        "processing_metadata": {
-            "processing_time_ms": result.get_processing_time() if hasattr(result, 'get_processing_time') else 0,
-            "nodes_executed": ["text_cleaner", "input_validator", "schema_retriever", "field_mapper", "context_injector"],
-            "warnings": [],
-            "confidence_source": "llm" if hasattr(result, 'confidence_score') and result.confidence_score > 0 else "validation"
-        },
-        "original_input": result.raw_input
-    }
-
-
-if __name__ == "__main__":
-    # Example usage - prompts relevant to test database
-    test_inputs = [
-        "Show me total revenue by region for electronics products this month",
-        "Create a bar chart comparing iPhone vs Samsung Galaxy sales performance", 
-        "Display customer analytics for premium segment users aged 25-35 in North America",
-        "Generate a line chart of daily revenue trends for home appliances category"
-    ]
-    
-    agent = InputParserAgent()
-    
-    for i, test_input in enumerate(test_inputs):
-        print(f"\n{'='*80}")
-        print(f"TEST {i+1}: {test_input}")
-        print(f"{'='*80}")
-        
-        result = agent.process_sync(test_input, thread_id=f"test_{i+1}")
-        
-        print(f"📊 RESULTS:")
-        print(f"   Success: {result.success}")
-        print(f"   Valid: {result.is_valid}")
-        print(f"   Confidence Score: {result.confidence_score:.2f}")
-        print(f"   Detected Intent: {result.detected_intent}")
-        print(f"   Primary Table: {result.primary_table}")
-        print(f"   Columns Found: {len(result.columns) if result.columns else 0}")
-        print(f"   Mapped Fields: {len(result.mapped_fields) if result.mapped_fields else 0}")
-        if result.error_info:
-            print(f"   Error: {result.error_info}")
-        
-        # Specification-compliant summary
-        print(f"\n🎯 SPECIFICATION OUTPUT:")
-        output_dict = parse_input_to_dict(test_input)
-        print(f"   cleaned_input: '{output_dict['cleaned_input']}'")
-        print(f"   is_valid: {output_dict['is_valid']}")
-        print(f"   confidence_score: {output_dict['confidence_score']:.2f}")
-        print(f"   detected_intent: '{output_dict['detected_intent']}'")
-        print(f"   primary_table: '{output_dict['primary_table']}'")
-        print(f"   columns: {output_dict['columns']}")
-        
-        if output_dict['mapped_fields']:
-            print(f"   📝 mapped_fields:")
-            for field_name, field_value in output_dict['mapped_fields'].items():
-                print(f"      '{field_name}': '{field_value}'")
-        
-        if output_dict['schema_context']:
-            print(f"   📋 schema_context: {len(output_dict['schema_context'])} tables")
-            for table_name in output_dict['schema_context'].keys():
-                print(f"      - {table_name}")
-        
-        print(f"   ⏱️  processing_time_ms: {output_dict['processing_metadata']['processing_time_ms']:.1f}")
-        print(f"   original_input: '{output_dict['original_input']}'")

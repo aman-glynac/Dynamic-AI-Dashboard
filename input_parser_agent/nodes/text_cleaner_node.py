@@ -4,14 +4,9 @@ Text Cleaner Node for LangGraph workflow
 
 from typing import Dict
 from datetime import datetime
-import sys
-import os
 
-# Add tools to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-from tools.text_cleaner import TextCleaner
-from state import InputParserState
+from ..tools.text_cleaner import TextCleaner
+from ..state import InputParserState
 
 
 class TextCleanerNode:
