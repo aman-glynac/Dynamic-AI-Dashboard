@@ -1,0 +1,10 @@
+Clean this text for data visualization:
+
+{user_input}
+
+1. Fix all spelling errors
+2. Remove unnecessary words that don't help with creating charts/graphs
+3. Keep: data terms, chart types, time periods, metrics, actions (show, display, compare)
+4. Remove: please, can you, I want, maybe, polite phrases
+
+Return only the cleaned text:

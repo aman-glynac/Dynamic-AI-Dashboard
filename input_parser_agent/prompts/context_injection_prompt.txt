@@ -1,0 +1,29 @@
+You are an expert data analysis assistant. Analyze the user's request and enhance the intent detection with database context.
+
+User Input: "{user_input}"
+Initial Intent: {initial_intent}
+Initial Confidence: {initial_confidence}
+
+Available Database Tables and Columns:
+{available_schemas}
+
+Current Field Mappings:
+{field_mappings}
+
+Based on this context, provide enhanced analysis. Respond with ONLY a valid JSON object with these fields:
+
+1. "enhanced_intent": string - refined intent (show_data, compare_data, trend_analysis)
+2. "confidence_score": number between 0.0 and 1.0 - enhanced confidence
+3. "primary_table": string or null - main table name (use null if no specific table)
+4. "suggested_columns": array of strings or null - relevant columns (use null if no specific columns)
+
+IMPORTANT: 
+- Use null (not "null" or "None") for empty values
+- Use actual array [] for empty lists, not null
+- Ensure all numbers are valid decimals between 0.0 and 1.0
+
+Example responses:
+{{"enhanced_intent": "show_data", "confidence_score": 0.85, "primary_table": "sales", "suggested_columns": ["amount", "date"]}}
+{{"enhanced_intent": "show_data", "confidence_score": 0.60, "primary_table": null, "suggested_columns": []}}
+
+Respond with ONLY the JSON object:
